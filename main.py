@@ -34,6 +34,7 @@ with codecs.open( u'example.csv', u"w", u"utf-8" ) as fileTo:
 	csvFieldnames = list(fieldnames)
 	csvFieldnames.insert(0,'Key')
 	writer = csv.DictWriter(fileTo, fieldnames=csvFieldnames)
+	writer.writeheader()
 	for key in keys:
 		rowToWrite = {'Key':key}
 		for fieldname in fieldnames:
