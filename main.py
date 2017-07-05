@@ -23,14 +23,12 @@ for (key, comment) in iteritems(keysComments):
 fieldnames = ['Value','Comment']
 values = {'Value':keysValues,'Comment':keysComments}
 keys = keysValues.keys()
+
+csvFileName = u"example.csv"
+
 print( u'Start writing csv file' )
 
-# with codecs.open( u'example.csv', u"w", u"utf-8" ) as fileTo:
-# 	fileTo.write( u"Keys;Comments;Values\n" )
-# 	for key in keys:
-# 		fileTo.write( u'"' + key + u'";"' + keysComments[key] + u'";"' + keysValues[key] + u'"\n' )
-
-with codecs.open( u'example.csv', u"w", u"utf-8" ) as fileTo:
+with codecs.open( csvFileName, u"w", u"utf-8" ) as fileTo:
 	csvFieldnames = list(fieldnames)
 	csvFieldnames.insert(0,'Key')
 	writer = csv.DictWriter(fileTo, fieldnames=csvFieldnames)
@@ -42,3 +40,24 @@ with codecs.open( u'example.csv', u"w", u"utf-8" ) as fileTo:
 		writer.writerow(rowToWrite)
 
 print( u'Finnish sriting csv file' )
+
+print( u'Start reading csv file' )
+
+with codecs.open( csvFileName, u"r" ) as csvfile:
+	reader = csv.DictReader(csvfile)
+	csvFieldnames = reader.fieldnames
+	print(csvFieldnames)
+	if not u'Key' in csvFieldnames:
+		raise ValueError("\'Key\' is not present as a fieldname in csv.")
+	else:
+		for row in reader:
+			print(row)
+
+print( u'Finnish reading csv file' )
+
+# with codecs.open( lFilePathTo, "w", "utf-16" ) as fileTo:
+# 	# fileTo.write( "\n" ) # Unnecessary
+# 	for (comment, key, value) in keysInfosTo:
+# 		fileTo.write( "/* " + comment + " */" + "\n" )
+# 		fileTo.write( "\"" + key + "\" = \"" + value + "\";" + "\n" )
+# 		fileTo.write( "\n" )
