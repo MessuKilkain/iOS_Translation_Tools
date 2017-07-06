@@ -18,8 +18,7 @@ def parseAppleLocalizedStringsFile(filePath):
 	:param str filePath: The path to csv file to import from
 	:return: Two dictionaries: both using localization keys as keys, the first using localized texts as values, the second using comments as values
 	:rtype: (dict,dict)
-	:raises ValueError: if the message_body exceeds 160 characters
-	:raises TypeError: if the message_body is not a basestring
+	:raises AppleLocalizedStringsFileSyntaxError: if the parsing failed at some point
 	'''
 	rComment = '^ */\*(.*)\*/ *$'
 	pComment = re.compile(rComment)
@@ -86,6 +85,17 @@ def parseAppleLocalizedStringsFile(filePath):
 		return (keysValues, keysComments)
 
 def exportLocalizationToCsvFile(outputFileName,keys,localization,encoding=u"utf-8"):
+	'''
+	Write localization to a CSV file.
+
+	:param str outputFileName: The path to csv file to export to
+	:param list keys: The list of localization key
+	:param dict localization: The dictionary of dictionries of localized texts, first level key being the language or 'Comment', second level key being the localization key for the translated text or the comment
+	:param str encoding: Encoding used for codecs.open (optional)
+	:return: void
+	:rtype: None
+	:raises ValueError: if 'Key' is present in the csv fieldnames
+	'''
 	fieldnames = list(localization)
 	if FIELDNAME_KEY in fieldnames:
 		raise ValueError(FIELDNAME_KEY + u" is expected to be absent from fieldnames")
@@ -107,7 +117,7 @@ def importLocalizationFromCsvFile(inputFileName,encoding=u"utf-8"):
 
 	:param str inputFileName: The path to csv file to import from
 	:param str encoding: Encoding used for codecs.open (optional)
-	:return: The list of localization keys and the dictionary of dictionries, first key being the language or 'Comment', second key being the localization key for the translated text or the comment
+	:return: The list of localization keys and the dictionary of dictionries of localized texts, first level key being the language or 'Comment', second level key being the localization key for the translated text or the comment
 	:rtype: (list,dict)
 	:raises ValueError: if 'Key' is not present in the csv fieldnames
 	'''
