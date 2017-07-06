@@ -132,12 +132,12 @@ def importLocalizationFromCsvFile(inputFileName,encoding=u"utf-8"):
 			raise ValueError(FIELDNAME_KEY + u" is not present as a fieldname in csv.")
 		else:
 			csvFieldnames.remove(FIELDNAME_KEY)
-			for fieldname in fieldnames:
+			for fieldname in csvFieldnames:
 				extractedValues[fieldname] = dict()
 			for row in reader:
 				# print(row)
 				key = row[FIELDNAME_KEY]
 				extractedKeys.append(key)
-				for fieldname in fieldnames:
+				for fieldname in csvFieldnames:
 					extractedValues[fieldname][key] = row[fieldname]
 	return (extractedKeys, extractedValues)
