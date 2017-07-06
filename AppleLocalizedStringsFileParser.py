@@ -15,7 +15,7 @@ def parseAppleLocalizedStringsFile(filePath):
 	'''
 	Parse and return localization from an Apple '.strings' file.
 
-	:param str filePath: The path to csv file to import from
+	:param str filePath: The path to Apple '.strings' file to import from
 	:return: Two dictionaries: both using localization keys as keys, the first using localized texts as values, the second using comments as values
 	:rtype: (dict,dict)
 	:raises AppleLocalizedStringsFileSyntaxError: if the parsing failed at some point
@@ -84,32 +84,25 @@ def parseAppleLocalizedStringsFile(filePath):
 	else:
 		return (keysValues, keysComments)
 
-def exportLocalizationToCsvFile(outputFileName,keys,localization,encoding=u"utf-8"):
+def writeAppleLocalizedStringsFile(filePath,keys,comments,localizedTexts):
 	'''
-	Write localization to a CSV file.
+	Write a localization Apple '.strings' file.
 
-	:param str outputFileName: The path to csv file to export to
-	:param list keys: The list of localization key
-	:param dict localization: The dictionary of dictionries of localized texts, first level key being the language or 'Comment', second level key being the localization key for the translated text or the comment
-	:param str encoding: Encoding used for codecs.open (optional)
+	:param str filePath: The path to Apple '.strings' file to export to
+	:param list keys: Localization keys
+	:param dict comments: dictionary with localization keys as keys and comments as values
+	:param dict localizedTexts: dictionary with localization keys as keys and localized texts as values
 	:return: void
 	:rtype: None
-	:raises ValueError: if 'Key' is present in the csv fieldnames
+	:raises ValueError: if 'Key' is not present in the csv fieldnames
 	'''
-	fieldnames = list(localization)
-	if FIELDNAME_KEY in fieldnames:
-		raise ValueError(FIELDNAME_KEY + u" is expected to be absent from fieldnames")
-	with codecs.open( outputFileName, u"w", encoding=encoding ) as fileTo:
-		csvFieldnames = list(fieldnames)
-		csvFieldnames.insert(0,FIELDNAME_KEY)
-		writer = csv.DictWriter(fileTo, fieldnames=csvFieldnames)
-		writer.writeheader()
+	with codecs.open( filePath, u"w", u"utf-16-le" ) as fileTo:
 		for key in keys:
-			rowToWrite = {FIELDNAME_KEY:key}
-			for fieldname in fieldnames:
-				if key in localization[fieldname]:
-					rowToWrite[fieldname] = localization[fieldname][key]
-			writer.writerow(rowToWrite)
+			comment = comments.get(key, u"")
+			value = localizedTexts.get(key, u"")
+			fileTo.write( u"/* " + comment + u" */" + u"\n" )
+			fileTo.write( u"\"" + key + u"\" = \"" + value + u"\";" + u"\n" )
+			fileTo.write( u"\n" )
 	return
 
 def importLocalizationFromCsvFile(inputFileName,encoding=u"utf-8"):
@@ -141,3 +134,31 @@ def importLocalizationFromCsvFile(inputFileName,encoding=u"utf-8"):
 				for fieldname in csvFieldnames:
 					extractedValues[fieldname][key] = row[fieldname]
 	return (extractedKeys, extractedValues)
+
+def exportLocalizationToCsvFile(outputFileName,keys,localization,encoding=u"utf-8"):
+	'''
+	Write localization to a CSV file.
+
+	:param str outputFileName: The path to csv file to export to
+	:param list keys: The list of localization key
+	:param dict localization: The dictionary of dictionries of localized texts, first level key being the language or 'Comment', second level key being the localization key for the translated text or the comment
+	:param str encoding: Encoding used for codecs.open (optional)
+	:return: void
+	:rtype: None
+	:raises ValueError: if 'Key' is present in the csv fieldnames
+	'''
+	fieldnames = list(localization)
+	if FIELDNAME_KEY in fieldnames:
+		raise ValueError(FIELDNAME_KEY + u" is expected to be absent from fieldnames")
+	with codecs.open( outputFileName, u"w", encoding=encoding ) as fileTo:
+		csvFieldnames = list(fieldnames)
+		csvFieldnames.insert(0,FIELDNAME_KEY)
+		writer = csv.DictWriter(fileTo, fieldnames=csvFieldnames)
+		writer.writeheader()
+		for key in keys:
+			rowToWrite = {FIELDNAME_KEY:key}
+			for fieldname in fieldnames:
+				if key in localization[fieldname]:
+					rowToWrite[fieldname] = localization[fieldname][key]
+			writer.writerow(rowToWrite)
+	return
