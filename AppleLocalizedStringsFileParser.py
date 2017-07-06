@@ -110,6 +110,7 @@ def exportLocalizationToCsvFile(outputFileName,keys,localization,encoding=u"utf-
 				if key in localization[fieldname]:
 					rowToWrite[fieldname] = localization[fieldname][key]
 			writer.writerow(rowToWrite)
+	return
 
 def importLocalizationFromCsvFile(inputFileName,encoding=u"utf-8"):
 	'''
