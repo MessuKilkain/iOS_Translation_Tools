@@ -1,15 +1,22 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
+from __future__ import print_function
+
 import re
+import os
 import csv
 import codecs
+import subprocess
 
 FIELDNAME_KEY = u'Key'
 FIELDNAME_COMMENT = u'Comment'
 
 class AppleLocalizedStringsFileSyntaxError(Exception):
 	'''Exception raised when the parser can not extract every part of the localized entry'''
+
+class ResourcesError(Exception):
+	'''Exception raised when files are unexpected or in unexpected state'''
 
 def parseAppleLocalizedStringsFile(filePath):
 	'''
@@ -161,4 +168,52 @@ def exportLocalizationToCsvFile(outputFileName,keys,localization,encoding=u"utf-
 				if key in localization[fieldname]:
 					rowToWrite[fieldname] = localization[fieldname][key]
 			writer.writerow(rowToWrite)
+	return
+
+
+# return a strings file keys: list
+def prepareLocalizationPaths(folderPath):
+	baseLprojFolderName = u"Base.lproj"
+	baseLocalizationFolderPathList = list()
+	localizationFiles = []
+	localizationFolders = []
+	for (dirpath, dirnames, filenames) in os.walk(folderPath):
+		if dirpath.endswith(baseLprojFolderName) :
+			baseLocalizationFolderPathList.append(dirpath)
+	if 1 != len(baseLocalizationFolderPathList) :
+		raise ResourcesError( str(numberOfFolderBaseLprojFound) + u" Base.lproj folder found, expected 1.", baseLocalizationFolderPathList)
+
+	baseLocalizationFolderPath = baseLocalizationFolderPathList[0]
+
+	localizationFiles = [
+		lFile
+		for lFile
+		in os.listdir(baseLocalizationFolderPath)
+		if lFile.endswith(u".strings")
+			and os.path.isfile(os.path.join(baseLocalizationFolderPath,lFile))
+		]
+	(head,tail) = os.path.split(baseLocalizationFolderPath)
+	localizationFolders = [
+		os.path.join(head,lFile)
+		for lFile
+		in os.listdir(head)
+		if lFile.endswith(u".lproj")
+			and not os.path.isfile(os.path.join(head,lFile))
+			and not lFile == baseLprojFolderName
+		]
+
+	return ( baseLocalizationFolderPath, localizationFiles, localizationFolders )
+
+def writeLocalizationFiles( sourceFilesProjectRootFolderPath, outputLocalizationFolderPath ):
+	# NOTE : the final solution was to use find with -print0 and xargs with -0 to force the use of other separator
+	findFilesCommand = subprocess.Popen( ["find",sourceFilesProjectRootFolderPath,"-name","*.m","-print0"], stdout = subprocess.PIPE, stderr = subprocess.PIPE )
+
+	# "stdin = findFilesCommand.stdout" is necessary to link subprocesses
+	genstringsCommand = subprocess.Popen( ["xargs","-0","genstrings","-o",outputLocalizationFolderPath], stdin = findFilesCommand.stdout, stdout = subprocess.PIPE, stderr = subprocess.PIPE )
+	findFilesCommand.stdout.close()
+	(stdoutdata, stderrdata) = genstringsCommand.communicate()
+	if stdoutdata:
+		raise RuntimeWarning( u"stdoutdata : " + stdoutdata )
+	if stderrdata:
+		raise RuntimeWarning( u"stderrdata : " + stderrdata )
 	return
