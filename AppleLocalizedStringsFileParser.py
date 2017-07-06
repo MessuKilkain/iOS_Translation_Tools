@@ -2,17 +2,25 @@
 # -*- coding: utf-8 -*-
 
 import re
+import csv
 import codecs
+
+FIELDNAME_KEY = u'Key'
+FIELDNAME_COMMENT = u'Comment'
 
 class AppleLocalizedStringsFileSyntaxError(Exception):
 	'''Exception raised when the parser can not extract every part of the localized entry'''
 
-########################################################
-# functions Keys extraction
-########################################################
-
-# Return (keysValues, keysComments), two dictionaries
 def parseAppleLocalizedStringsFile(filePath):
+	'''
+	Parse and return localization from an Apple '.strings' file.
+
+	:param str filePath: The path to csv file to import from
+	:return: Two dictionaries: both using localization keys as keys, the first using localized texts as values, the second using comments as values
+	:rtype: (dict,dict)
+	:raises ValueError: if the message_body exceeds 160 characters
+	:raises TypeError: if the message_body is not a basestring
+	'''
 	rComment = '^ */\*(.*)\*/ *$'
 	pComment = re.compile(rComment)
 	rCommentStart = '^ */\*(.*)$'
@@ -76,3 +84,49 @@ def parseAppleLocalizedStringsFile(filePath):
 		return None
 	else:
 		return (keysValues, keysComments)
+
+def exportLocalizationToCsvFile(outputFileName,keys,localization,encoding=u"utf-8"):
+	fieldnames = list(localization)
+	if FIELDNAME_KEY in fieldnames:
+		raise ValueError(FIELDNAME_KEY + u" is expected to be absent from fieldnames")
+	with codecs.open( outputFileName, u"w", encoding=encoding ) as fileTo:
+		csvFieldnames = list(fieldnames)
+		csvFieldnames.insert(0,FIELDNAME_KEY)
+		writer = csv.DictWriter(fileTo, fieldnames=csvFieldnames)
+		writer.writeheader()
+		for key in keys:
+			rowToWrite = {FIELDNAME_KEY:key}
+			for fieldname in fieldnames:
+				if key in localization[fieldname]:
+					rowToWrite[fieldname] = localization[fieldname][key]
+			writer.writerow(rowToWrite)
+
+def importLocalizationFromCsvFile(inputFileName,encoding=u"utf-8"):
+	'''
+	Parse and return localization from a CSV file.
+
+	:param str inputFileName: The path to csv file to import from
+	:param str encoding: Encoding used for codecs.open (optional)
+	:return: The list of localization keys and the dictionary of dictionries, first key being the language or 'Comment', second key being the localization key for the translated text or the comment
+	:rtype: (list,dict)
+	:raises ValueError: if 'Key' is not present in the csv fieldnames
+	'''
+	extractedValues = dict()
+	extractedKeys = list()
+
+	with codecs.open( inputFileName, u"r", encoding=encoding ) as csvfile:
+		reader = csv.DictReader(csvfile)
+		csvFieldnames = list(reader.fieldnames)
+		if not FIELDNAME_KEY in csvFieldnames:
+			raise ValueError(FIELDNAME_KEY + u" is not present as a fieldname in csv.")
+		else:
+			csvFieldnames.remove(FIELDNAME_KEY)
+			for fieldname in fieldnames:
+				extractedValues[fieldname] = dict()
+			for row in reader:
+				# print(row)
+				key = row[FIELDNAME_KEY]
+				extractedKeys.append(key)
+				for fieldname in fieldnames:
+					extractedValues[fieldname][key] = row[fieldname]
+	return (extractedKeys, extractedValues)
