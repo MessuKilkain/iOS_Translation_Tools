@@ -210,7 +210,7 @@ def exportLocalizationFromFolderToCsv(folderPath,outputFolder = u'.'):
 				translatedTexts[lFolderName] = keysValues
 		translatedTexts[FIELDNAME_COMMENT] = comments
 		outputFileName = os.path.join(outputFolder, lFileName + os.extsep + u"csv")
-		exportLocalizationToCsvFile( outputFileName, sorted(list(keys)), translatedTexts )
+		exportLocalizationToCsvFile( outputFileName, sorted(list(keys), key=lambda s:s.lower()), translatedTexts )
 		filesCreated.append(outputFileName)
 	return filesCreated
 
