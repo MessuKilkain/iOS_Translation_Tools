@@ -166,7 +166,6 @@ def importLocalizationFromCsvFile(inputFileName,encoding=u"utf-8"):
 			for fieldname in csvFieldnames:
 				extractedValues[fieldname] = dict()
 			for row in reader:
-				# print(row)
 				key = row[FIELDNAME_KEY]
 				extractedKeys.append(key)
 				for fieldname in csvFieldnames:
