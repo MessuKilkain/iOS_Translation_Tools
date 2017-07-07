@@ -214,6 +214,18 @@ def exportLocalizationFromFolderToCsv(folderPath,outputFolder = u'.'):
 		filesCreated.append(outputFileName)
 	return filesCreated
 
+def saveLocalizationFromCsvToProjectFolder(csvFilePath, projectFolderPath, localizationTableName, csvFileEncoding=u"utf-8", stringsFileEncoding=u"utf-16"):
+	( baseLocalizationFolderPath, localizationFiles, localizationFolders ) = prepareLocalizationPaths(projectFolderPath)
+
+	localizedFolders = list(localizationFolders)
+	localizedFolders.append(baseLocalizationFolderPath)
+
+	(extractedKeys, extractedValues) = importLocalizationFromCsvFile(csvFilePath, encoding=csvFileEncoding)
+	
+	for lFolderPath in localizedFolders:
+		lFolderName = os.path.basename( lFolderPath )
+		lFileLangPath = os.path.join( lFolderPath, localizationTableName )
+		writeAppleLocalizedStringsFile( lFileLangPath, extractedKeys, extractedValues[FIELDNAME_COMMENT], extractedValues[lFolderName], encoding=stringsFileEncoding)
 
 # return a strings file keys: list
 def prepareLocalizationPaths(folderPath):
