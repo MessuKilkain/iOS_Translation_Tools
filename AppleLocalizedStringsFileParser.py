@@ -6,7 +6,6 @@ from __future__ import print_function
 import re
 import os
 import csv
-import codecs
 import subprocess
 
 FIELDNAME_KEY = u'Key'
@@ -17,6 +16,23 @@ class AppleLocalizedStringsFileSyntaxError(Exception):
 
 class ResourcesError(Exception):
 	'''Exception raised when files are unexpected or in unexpected state'''
+
+def guessEncoding(filePath,encodingsToTry=[u"utf-16",u"utf-16-le",u"utf-8"]):
+	encodingFound = None
+	encodingsToTry = list(encodingsToTry)
+	while 0 < len(encodingsToTry) and not encodingFound:
+		encoding = encodingsToTry[0]
+		try:
+			with open(filePath, u"r", encoding=encoding) as stringsFile:
+				lines = stringsFile.readline()
+				encodingFound = encoding
+			pass
+		except UnicodeError as e:
+			encodingsToTry.pop(0)
+			if 0 >= len(encodingsToTry):
+				raise
+	return encodingFound
+
 
 def parseAppleLocalizedStringsFile(filePath):
 	'''
@@ -40,7 +56,27 @@ def parseAppleLocalizedStringsFile(filePath):
 	keysValues = {}
 	keysComments = {}
 
-	with codecs.open(filePath, "r", "utf-16-le") as stringsFile:
+	encoding = u"utf-16"
+	try:
+		with open(filePath, u"r", encoding=encoding) as stringsFile:
+			lines = stringsFile.readline()
+		pass
+	except UnicodeError as e:
+		encoding = u"utf-16-le"
+		try:
+			with open(filePath, u"r", encoding=encoding) as stringsFile:
+				lines = stringsFile.readline()
+			pass
+		except UnicodeError as e:
+			encoding = u"utf-8"
+			try:
+				with open(filePath, u"r", encoding=encoding) as stringsFile:
+					lines = stringsFile.readline()
+				pass
+			except UnicodeError as e:
+				raise
+
+	with open(filePath, u"r", encoding=encoding) as stringsFile:
 		lines = stringsFile.readlines()
 		lineCount = 0
 		hasComment = False
@@ -63,7 +99,7 @@ def parseAppleLocalizedStringsFile(filePath):
 								hasCommentStarted = True
 							else:
 								hasError = True
-								raise AppleLocalizedStringsFileSyntaxError('Invalid comment format',{'cComment':cComment, 'hasComment':hasComment, 'hasCommentStarted':hasCommentStarted, 'lineCount':lineCount, 'rawLine':lRaw})
+								raise AppleLocalizedStringsFileSyntaxError('Invalid comment format',{'cComment':cComment, 'hasComment':hasComment, 'hasCommentStarted':hasCommentStarted, 'lineCount':lineCount, 'rawLine':lRaw, 'filePath':filePath})
 					else:
 						result = pCommentEnd.search(l)
 						if result != None :
@@ -91,7 +127,7 @@ def parseAppleLocalizedStringsFile(filePath):
 	else:
 		return (keysValues, keysComments)
 
-def writeAppleLocalizedStringsFile(filePath,keys,comments,localizedTexts):
+def writeAppleLocalizedStringsFile(filePath,keys,comments,localizedTexts,encoding=u"utf-16"):
 	'''
 	Write a localization Apple '.strings' file.
 
@@ -103,7 +139,7 @@ def writeAppleLocalizedStringsFile(filePath,keys,comments,localizedTexts):
 	:rtype: None
 	:raises ValueError: if 'Key' is not present in the csv fieldnames
 	'''
-	with codecs.open( filePath, u"w", u"utf-16-le" ) as fileTo:
+	with open( filePath, u"w", encoding=encoding ) as fileTo:
 		for key in keys:
 			comment = comments.get(key, u"")
 			value = localizedTexts.get(key, u"")
@@ -117,7 +153,7 @@ def importLocalizationFromCsvFile(inputFileName,encoding=u"utf-8"):
 	Parse and return localization from a CSV file.
 
 	:param str inputFileName: The path to csv file to import from
-	:param str encoding: Encoding used for codecs.open (optional)
+	:param str encoding: Encoding used for open (optional)
 	:return: The list of localization keys and the dictionary of dictionries of localized texts, first level key being the language or 'Comment', second level key being the localization key for the translated text or the comment
 	:rtype: (list,dict)
 	:raises ValueError: if 'Key' is not present in the csv fieldnames
@@ -125,7 +161,7 @@ def importLocalizationFromCsvFile(inputFileName,encoding=u"utf-8"):
 	extractedValues = dict()
 	extractedKeys = list()
 
-	with codecs.open( inputFileName, u"r", encoding=encoding ) as csvfile:
+	with open( inputFileName, u"r", encoding=encoding ) as csvfile:
 		reader = csv.DictReader(csvfile)
 		csvFieldnames = list(reader.fieldnames)
 		if not FIELDNAME_KEY in csvFieldnames:
@@ -149,7 +185,7 @@ def exportLocalizationToCsvFile(outputFileName,keys,localization,encoding=u"utf-
 	:param str outputFileName: The path to csv file to export to
 	:param list keys: The list of localization key
 	:param dict localization: The dictionary of dictionries of localized texts, first level key being the language or 'Comment', second level key being the localization key for the translated text or the comment
-	:param str encoding: Encoding used for codecs.open (optional)
+	:param str encoding: Encoding used for open (optional)
 	:return: void
 	:rtype: None
 	:raises ValueError: if 'Key' is present in the csv fieldnames
@@ -157,7 +193,7 @@ def exportLocalizationToCsvFile(outputFileName,keys,localization,encoding=u"utf-
 	fieldnames = list(localization)
 	if FIELDNAME_KEY in fieldnames:
 		raise ValueError(FIELDNAME_KEY + u" is expected to be absent from fieldnames")
-	with codecs.open( outputFileName, u"w", encoding=encoding ) as fileTo:
+	with open( outputFileName, u"w", encoding=encoding ) as fileTo:
 		csvFieldnames = list(fieldnames)
 		csvFieldnames.insert(0,FIELDNAME_KEY)
 		writer = csv.DictWriter(fileTo, fieldnames=csvFieldnames)
@@ -170,6 +206,26 @@ def exportLocalizationToCsvFile(outputFileName,keys,localization,encoding=u"utf-
 			writer.writerow(rowToWrite)
 	return
 
+def exportLocalizationFromFolderToCsv(folderPath,outputFolder = u'.'):
+	( baseLocalizationFolderPath, localizationFiles, localizationFolders ) = prepareLocalizationPaths(folderPath)
+
+	localizedFolders = list(localizationFolders)
+	localizedFolders.append(baseLocalizationFolderPath)
+
+	for lFileName in localizationFiles:
+		keys = set()
+		comments = dict()
+		translatedTexts = dict()
+		for lFolderPath in localizedFolders:
+			lFolderName = os.path.basename( lFolderPath )
+			lFileLangPath = os.path.join( lFolderPath, lFileName )
+			if os.path.exists( lFileLangPath ) and os.path.isfile( lFileLangPath ):
+				(keysValues, keysComments) = parseAppleLocalizedStringsFile(lFileLangPath)
+				keys.update(list(keysValues))
+				comments = keysComments
+				translatedTexts[lFolderName] = keysValues
+		translatedTexts[FIELDNAME_COMMENT] = comments
+		exportLocalizationToCsvFile( os.path.join(outputFolder, lFileName + os.extsep + u"csv"), sorted(list(keys)), translatedTexts )
 
 # return a strings file keys: list
 def prepareLocalizationPaths(folderPath):
