@@ -34,7 +34,7 @@ def guessEncoding(filePath,encodingsToTry=[u"utf-16",u"utf-16-le",u"utf-8"]):
 	return encodingFound
 
 
-def parseAppleLocalizedStringsFile(filePath):
+def parseAppleLocalizedStringsFile(filePath,encodingsToTry=[u"utf-16",u"utf-16-le",u"utf-8"]):
 	'''
 	Parse and return localization from an Apple '.strings' file.
 
@@ -56,25 +56,7 @@ def parseAppleLocalizedStringsFile(filePath):
 	keysValues = {}
 	keysComments = {}
 
-	encoding = u"utf-16"
-	try:
-		with open(filePath, u"r", encoding=encoding) as stringsFile:
-			lines = stringsFile.readline()
-		pass
-	except UnicodeError as e:
-		encoding = u"utf-16-le"
-		try:
-			with open(filePath, u"r", encoding=encoding) as stringsFile:
-				lines = stringsFile.readline()
-			pass
-		except UnicodeError as e:
-			encoding = u"utf-8"
-			try:
-				with open(filePath, u"r", encoding=encoding) as stringsFile:
-					lines = stringsFile.readline()
-				pass
-			except UnicodeError as e:
-				raise
+	encoding = guessEncoding(filePath,encodingsToTry=encodingsToTry)
 
 	with open(filePath, u"r", encoding=encoding) as stringsFile:
 		lines = stringsFile.readlines()
