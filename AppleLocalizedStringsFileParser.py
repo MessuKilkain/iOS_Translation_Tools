@@ -17,6 +17,9 @@ class AppleLocalizedStringsFileSyntaxError(Exception):
 class ResourcesError(Exception):
 	'''Exception raised when files are unexpected or in unexpected state'''
 
+class UnmatchingComment(Exception):
+	'''Exception raised when comments are different for the same localization key'''
+
 def guessEncoding(filePath,encodingsToTry=[u"utf-16",u"utf-16-le",u"utf-8"]):
 	encodingFound = None
 	encodingsToTry = list(encodingsToTry)
@@ -33,6 +36,16 @@ def guessEncoding(filePath,encodingsToTry=[u"utf-16",u"utf-16-le",u"utf-8"]):
 				raise
 	return encodingFound
 
+def mergeCommentsDictionaries(d1,d2):
+	res = d1.copy()
+	for k in d2:
+		v = d2[k]
+		if v:
+			if k in d1 and d1[k] and d1[k] != d2[k]:
+				raise UnmatchingComment(u"Comments are differents for key " + k, [d1[k] ,d2[k]])
+			else:
+				res[k] = v
+	return res
 
 def parseAppleLocalizedStringsFile(filePath,encodingsToTry=[u"utf-16",u"utf-16-le",u"utf-8"]):
 	'''
@@ -205,8 +218,7 @@ def exportLocalizationFromFolderToCsv(folderPath,outputFolder = u'.'):
 			if os.path.exists( lFileLangPath ) and os.path.isfile( lFileLangPath ):
 				(keysValues, keysComments) = parseAppleLocalizedStringsFile(lFileLangPath)
 				keys.update(list(keysValues))
-				# TODO : check comments coherence
-				comments.update(keysComments)
+				comments = mergeCommentsDictionaries(comments, keysComments)
 				translatedTexts[lFolderName] = keysValues
 		translatedTexts[FIELDNAME_COMMENT] = comments
 		outputFileName = os.path.join(outputFolder, lFileName + os.extsep + u"csv")
