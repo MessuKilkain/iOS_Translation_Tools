@@ -190,10 +190,11 @@ def exportLocalizationToCsvFile(outputFileName,keys,localization,encoding=u"utf-
 
 def exportLocalizationFromFolderToCsv(folderPath,outputFolder = u'.'):
 	( baseLocalizationFolderPath, localizationFiles, localizationFolders ) = prepareLocalizationPaths(folderPath)
-
+	
 	localizedFolders = list(localizationFolders)
 	localizedFolders.append(baseLocalizationFolderPath)
-
+	
+	filesCreated = list()
 	for lFileName in localizationFiles:
 		keys = set()
 		comments = dict()
@@ -204,10 +205,15 @@ def exportLocalizationFromFolderToCsv(folderPath,outputFolder = u'.'):
 			if os.path.exists( lFileLangPath ) and os.path.isfile( lFileLangPath ):
 				(keysValues, keysComments) = parseAppleLocalizedStringsFile(lFileLangPath)
 				keys.update(list(keysValues))
-				comments = keysComments
+				# TODO : check comments coherence
+				comments.update(keysComments)
 				translatedTexts[lFolderName] = keysValues
 		translatedTexts[FIELDNAME_COMMENT] = comments
-		exportLocalizationToCsvFile( os.path.join(outputFolder, lFileName + os.extsep + u"csv"), sorted(list(keys)), translatedTexts )
+		outputFileName = os.path.join(outputFolder, lFileName + os.extsep + u"csv")
+		exportLocalizationToCsvFile( outputFileName, sorted(list(keys)), translatedTexts )
+		filesCreated.append(outputFileName)
+	return filesCreated
+
 
 # return a strings file keys: list
 def prepareLocalizationPaths(folderPath):
