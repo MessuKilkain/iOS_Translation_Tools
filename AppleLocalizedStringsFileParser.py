@@ -10,6 +10,7 @@ import subprocess
 
 FIELDNAME_KEY = u'Key'
 FIELDNAME_COMMENT = u'Comment'
+BASE_LPROJ_FOLDER_NAME = u"Base.lproj"
 
 class AppleLocalizedStringsFileSyntaxError(Exception):
 	'''Exception raised when the parser can not extract every part of the localized entry'''
@@ -277,16 +278,16 @@ def saveLocalizationFromCsvToProjectFolder(csvFilePath, projectFolderPath, local
 		lFileLangPath = os.path.join( lFolderPath, localizationTableName )
 		writeAppleLocalizedStringsFile( lFileLangPath, extractedKeys, extractedValues[FIELDNAME_COMMENT], extractedValues[lFolderName], encoding=stringsFileEncoding)
 
-def prepareLocalizationPaths(folderPath):
+def prepareLocalizationPaths(folderPath,baseLprojFolderName=BASE_LPROJ_FOLDER_NAME):
 	'''
 	Get the paths necessary to process externally Apple '.strings' localization files from Project folder
 
 	:param str folderPath: The path to the project folder to scan.
+	:param str baseLprojFolderName: The name of the folder for Base localization (aka untranslated)
 	:return: Three values: the path to the 'Base.lproj' folder found, the list of localization files name (table name with extension '.strings') found, the list of path to language folders found (like 'Base.lproj')
 	:rtype: (str,list,list)
 	:raises ResourcesError: if there is no or more than only one 'Base.lproj' found
 	'''
-	baseLprojFolderName = u"Base.lproj"
 	baseLocalizationFolderPathList = list()
 	localizationFiles = []
 	localizationFolders = []
