@@ -21,6 +21,15 @@ class UnmatchingComment(Exception):
 	'''Exception raised when comments are different for the same localization key'''
 
 def guessEncoding(filePath,encodingsToTry=[u"utf-16",u"utf-16-le",u"utf-8"]):
+	'''
+	Try to open and read the file with encodings until the right one is found or all encodings have been tested
+
+	:param str filePath: The path to file which encoding is unknown
+	:param list encodingsToTry: List of encodings to try on the file. (optional)
+	:return: Correct encoding found or None
+	:rtype: str
+	:raises EncodingError: if the last encoding to try has failed to open the file.
+	'''
 	encodingFound = None
 	encodingsToTry = list(encodingsToTry)
 	while 0 < len(encodingsToTry) and not encodingFound:
@@ -37,6 +46,15 @@ def guessEncoding(filePath,encodingsToTry=[u"utf-16",u"utf-16-le",u"utf-8"]):
 	return encodingFound
 
 def mergeCommentsDictionaries(d1,d2):
+	'''
+	Combine two dictionaries without conflicts
+
+	:param d1: First dictionary
+	:param d2: Second dictionary
+	:return: A dictionary with keys and values from both d1 and d2
+	:rtype: dict
+	:raises UnmatchingComment: if there is any conflict between the two dictionaries.
+	'''
 	res = d1.copy()
 	for k in d2:
 		v = d2[k]
@@ -52,6 +70,7 @@ def parseAppleLocalizedStringsFile(filePath,encodingsToTry=[u"utf-16",u"utf-16-l
 	Parse and return localization from an Apple '.strings' file.
 
 	:param str filePath: The path to Apple '.strings' file to import from
+	:param list encodingsToTry: List of encodings to try on the file. (optional)
 	:return: Two dictionaries: both using localization keys as keys, the first using localized texts as values, the second using comments as values
 	:rtype: (dict,dict)
 	:raises AppleLocalizedStringsFileSyntaxError: if the parsing failed at some point
@@ -130,6 +149,7 @@ def writeAppleLocalizedStringsFile(filePath,keys,comments,localizedTexts,encodin
 	:param list keys: Localization keys
 	:param dict comments: dictionary with localization keys as keys and comments as values
 	:param dict localizedTexts: dictionary with localization keys as keys and localized texts as values
+	:param str encoding: Encoding used for writing files (optional)
 	:return: void
 	:rtype: None
 	:raises ValueError: if 'Key' is not present in the csv fieldnames
@@ -201,11 +221,19 @@ def exportLocalizationToCsvFile(outputFileName,keys,localization,encoding=u"utf-
 	return
 
 def exportLocalizationFromFolderToCsv(folderPath,outputFolder = u'.'):
+	'''
+	Export localization to csv from Apple '.strings' files found and sorted in folderPath
+
+	:param str folderPath: The path to the folder containing Apple '.strings' files in its hierarchy to convert into .csv
+	:param str outputFolder: The path to the folder to write csv files. (optional)
+	:return: The list of paths to created csv files
+	:rtype: list
+	'''
 	( baseLocalizationFolderPath, localizationFiles, localizationFolders ) = prepareLocalizationPaths(folderPath)
-	
+
 	localizedFolders = list(localizationFolders)
 	localizedFolders.append(baseLocalizationFolderPath)
-	
+
 	filesCreated = list()
 	for lFileName in localizationFiles:
 		keys = set()
@@ -226,20 +254,38 @@ def exportLocalizationFromFolderToCsv(folderPath,outputFolder = u'.'):
 	return filesCreated
 
 def saveLocalizationFromCsvToProjectFolder(csvFilePath, projectFolderPath, localizationTableName, csvFileEncoding=u"utf-8", stringsFileEncoding=u"utf-16"):
+	'''
+	Import localization from csv to Apple '.strings' files in the localization folders founds in projectFolderPath
+
+	:param str csvFilePath: The path to csv file to import.
+	:param str projectFolderPath: The path to the folder containing Apple '.strings' files in its hierarchy
+	:param str localizationTableName: The name of '.strings' files to create
+	:param str csvFileEncoding: Encoding used for open csv file (optional)
+	:param str stringsFileEncoding: Encoding used for writing '.strings' files (optional)
+	:return: void
+	:rtype: None
+	'''
 	( baseLocalizationFolderPath, localizationFiles, localizationFolders ) = prepareLocalizationPaths(projectFolderPath)
 
 	localizedFolders = list(localizationFolders)
 	localizedFolders.append(baseLocalizationFolderPath)
 
 	(extractedKeys, extractedValues) = importLocalizationFromCsvFile(csvFilePath, encoding=csvFileEncoding)
-	
+
 	for lFolderPath in localizedFolders:
 		lFolderName = os.path.basename( lFolderPath )
 		lFileLangPath = os.path.join( lFolderPath, localizationTableName )
 		writeAppleLocalizedStringsFile( lFileLangPath, extractedKeys, extractedValues[FIELDNAME_COMMENT], extractedValues[lFolderName], encoding=stringsFileEncoding)
 
-# return a strings file keys: list
 def prepareLocalizationPaths(folderPath):
+	'''
+	Get the paths necessary to process externally Apple '.strings' localization files from Project folder
+
+	:param str folderPath: The path to the project folder to scan.
+	:return: Three values: the path to the 'Base.lproj' folder found, the list of localization files name (table name with extension '.strings') found, the list of path to language folders found (like 'Base.lproj')
+	:rtype: (str,list,list)
+	:raises ResourcesError: if there is no or more than only one 'Base.lproj' found
+	'''
 	baseLprojFolderName = u"Base.lproj"
 	baseLocalizationFolderPathList = list()
 	localizationFiles = []
