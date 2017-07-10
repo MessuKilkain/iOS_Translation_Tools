@@ -318,6 +318,15 @@ def prepareLocalizationPaths(folderPath):
 	return ( baseLocalizationFolderPath, localizationFiles, localizationFolders )
 
 def writeLocalizationFiles( sourceFilesProjectRootFolderPath, outputLocalizationFolderPath ):
+	'''
+	Generate '.strings' files from source code files '.m' in outputLocalizationFolderPath folder
+
+	:param str sourceFilesProjectRootFolderPath: The path to the folder containing source code files '.m' in its hierarchy
+	:param str outputLocalizationFolderPath: Path to the folder where '.strings' files should be generated.
+	:return: void
+	:rtype: None
+	:raises RuntimeWarning: if there is some data printed by command line used (in stdout or stderr)
+	'''
 	# NOTE : the final solution was to use find with -print0 and xargs with -0 to force the use of other separator
 	findFilesCommand = subprocess.Popen( ["find",sourceFilesProjectRootFolderPath,"-name","*.m","-print0"], stdout = subprocess.PIPE, stderr = subprocess.PIPE )
 
