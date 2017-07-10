@@ -8,7 +8,7 @@ import os
 import csv
 import subprocess
 # python2 open method does not have encoding parameter with open method, workarround is to use codecs.open instead
-import codecs
+from codecs import open
 
 FIELDNAME_KEY = u'Key'
 FIELDNAME_COMMENT = u'Comment'
@@ -38,7 +38,7 @@ def guessEncoding(filePath,encodingsToTry=[u"utf-16",u"utf-16-le",u"utf-8"]):
 	while 0 < len(encodingsToTry) and not encodingFound:
 		encoding = encodingsToTry[0]
 		try:
-			with codecs.open(filePath, u"r", encoding=encoding) as stringsFile:
+			with open(filePath, u"r", encoding=encoding) as stringsFile:
 				lines = stringsFile.readline()
 				encodingFound = encoding
 			pass
@@ -93,7 +93,7 @@ def parseAppleLocalizedStringsFile(filePath,encodingsToTry=[u"utf-16",u"utf-16-l
 
 	encoding = guessEncoding(filePath,encodingsToTry=encodingsToTry)
 
-	with codecs.open(filePath, u"r", encoding=encoding) as stringsFile:
+	with open(filePath, u"r", encoding=encoding) as stringsFile:
 		lines = stringsFile.readlines()
 		lineCount = 0
 		hasComment = False
@@ -157,7 +157,7 @@ def writeAppleLocalizedStringsFile(filePath,keys,comments,localizedTexts,encodin
 	:rtype: None
 	:raises ValueError: if 'Key' is not present in the csv fieldnames
 	'''
-	with codecs.open( filePath, u"w", encoding=encoding ) as fileTo:
+	with open( filePath, u"w", encoding=encoding ) as fileTo:
 		for key in keys:
 			comment = comments.get(key, u"")
 			value = localizedTexts.get(key, u"")
@@ -179,7 +179,7 @@ def importLocalizationFromCsvFile(inputFileName,encoding=u"utf-8"):
 	extractedValues = dict()
 	extractedKeys = list()
 
-	with codecs.open( inputFileName, u"r", encoding=encoding ) as csvfile:
+	with open( inputFileName, u"r", encoding=encoding ) as csvfile:
 		reader = csv.DictReader(csvfile)
 		csvFieldnames = list(reader.fieldnames)
 		if not FIELDNAME_KEY in csvFieldnames:
@@ -210,7 +210,7 @@ def exportLocalizationToCsvFile(outputFileName,keys,localization,encoding=u"utf-
 	fieldnames = list(localization)
 	if FIELDNAME_KEY in fieldnames:
 		raise ValueError(FIELDNAME_KEY + u" is expected to be absent from fieldnames")
-	with codecs.open( outputFileName, u"w", encoding=encoding ) as fileTo:
+	with open( outputFileName, u"w", encoding=encoding ) as fileTo:
 		csvFieldnames = list(fieldnames)
 		csvFieldnames.insert(0,FIELDNAME_KEY)
 		writer = csv.DictWriter(fileTo, fieldnames=csvFieldnames)
