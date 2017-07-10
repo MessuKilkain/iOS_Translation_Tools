@@ -335,8 +335,6 @@ def writeLocalizationFiles( sourceFilesProjectRootFolderPath, outputLocalization
 	genstringsCommand = subprocess.Popen( ["xargs","-0","genstrings","-o",outputLocalizationFolderPath], stdin = findFilesCommand.stdout, stdout = subprocess.PIPE, stderr = subprocess.PIPE )
 	findFilesCommand.stdout.close()
 	(stdoutdata, stderrdata) = genstringsCommand.communicate()
-	if stdoutdata:
-		raise RuntimeWarning( u"stdoutdata : " + stdoutdata )
-	if stderrdata:
-		raise RuntimeWarning( u"stderrdata : " + stderrdata )
+	if stdoutdata or stderrdata:
+		raise RuntimeWarning( u"The genstrings command line exit with data on stdout or stderr", {'stdoutdata':stdoutdata, 'stderrdata':stderrdata} )
 	return
