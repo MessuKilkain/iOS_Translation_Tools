@@ -4,9 +4,6 @@
 from __future__ import print_function
 from future.utils import iteritems
 
-import csv
-import codecs
-
 import AppleLocalizedStringsFileParser
 
 language = u'Value'
