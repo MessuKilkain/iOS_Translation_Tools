@@ -296,7 +296,8 @@ def prepareLocalizationPaths(folderPath,baseLprojFolderName=BASE_LPROJ_FOLDER_NA
 	for (dirpath, dirnames, filenames) in os.walk(folderPath):
 		if dirpath.endswith(baseLprojFolderName) :
 			baseLocalizationFolderPathList.append(dirpath)
-	if 1 != len(baseLocalizationFolderPathList) :
+	numberOfFolderBaseLprojFound = len(baseLocalizationFolderPathList)
+	if 1 != numberOfFolderBaseLprojFound :
 		raise ResourcesError( str(numberOfFolderBaseLprojFound) + u" Base.lproj folder found, expected 1.", baseLocalizationFolderPathList)
 
 	baseLocalizationFolderPath = baseLocalizationFolderPathList[0]
