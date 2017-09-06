@@ -172,7 +172,7 @@ def importLocalizationFromCsvFile(inputFileName,encoding=u"utf-8"):
 
 	:param str inputFileName: The path to csv file to import from
 	:param str encoding: Encoding used for open (optional)
-	:return: The list of localization keys and the dictionary of dictionries of localized texts, first level key being the language or 'Comment', second level key being the localization key for the translated text or the comment
+	:return: The list of localization keys and the dictionary of dictionaries of localized texts, first level key being the language or 'Comment', second level key being the localization key for the translated text or the comment
 	:rtype: (list,dict)
 	:raises ValueError: if 'Key' is not present in the csv fieldnames
 	'''
